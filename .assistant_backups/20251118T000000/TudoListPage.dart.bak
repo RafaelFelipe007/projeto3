@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+
+class TodoListPage extends StatefulWidget {
+  final DateTime? selectedDate;
+
+  const TodoListPage({Key? key, this.selectedDate}) : super(key: key);
+
+  @override
+  State<TodoListPage> createState() => _TodoListPageState();
+}
+
+class _TodoListPageState extends State<TodoListPage> {
+  final List<Task> _tasks = [];
+
+  void _addTask(String name) {
+    setState(() {
+      _tasks.add(Task(name: name));
+    });
+  }
+
+  void _toggleTaskCompletion(int index) {
+    setState(() {
+      _tasks[index].isCompleted = !_tasks[index].isCompleted;
+    });
+  }
+
+  void _removeTask(int index) {
+    setState(() {
+      _tasks.removeAt(index);
+    });
+  }
+
+  Future<void> _showAddTaskDialog() async {
+    final controller = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Adicionar tarefa'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Nome da tarefa'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(null),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Adicionar'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty) {
+      _addTask(result);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dateText = widget.selectedDate != null
+        ? '${widget.selectedDate!.day}/${widget.selectedDate!.month}/${widget.selectedDate!.year}'
+        : null;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(dateText != null ? 'To-Do - $dateText' : 'To-Do List'),
+      ),
+      body: _tasks.isEmpty
+          ? Center(
+              child: Text(
+                'Nenhuma tarefa${dateText != null ? ' para $dateText' : ''}.',
+                style: const TextStyle(fontSize: 16),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _tasks.length,
+              itemBuilder: (context, index) {
+                final task = _tasks[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(
+                      task.name,
+                      style: TextStyle(
+                        decoration: task.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    leading: IconButton(
+                      icon: Icon(
+                        task.isCompleted
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        color: task.isCompleted ? Colors.green : null,
+                      ),
+                      onPressed: () => _toggleTaskCompletion(index),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: () => _removeTask(index),
+                    ),
+                  ),
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTaskDialog,
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class Task {
+  String name;
+  bool isCompleted;
+
+  Task({required this.name, this.isCompleted = false});
+}
